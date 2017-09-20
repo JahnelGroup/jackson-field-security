@@ -11,6 +11,7 @@
 .springBeans
 
 ### IntelliJ IDEA ###
+out/
 .idea
 *.iws
 *.iml
