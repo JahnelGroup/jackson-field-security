@@ -17,9 +17,9 @@ apply plugin: 'kotlin'
 apply plugin: 'kotlin-spring'
 apply plugin: 'eclipse'
 apply plugin: 'org.springframework.boot'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
-group = 'com.jahnelgroup'
-version = '0.0.1-SNAPSHOT'
 sourceCompatibility = 1.8
 compileKotlin {
 	kotlinOptions.jvmTarget = "1.8"
@@ -43,4 +43,72 @@ dependencies {
 	compile("org.jetbrains.kotlin:kotlin-reflect:${kotlinVersion}")
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 	testCompile('org.springframework.security:spring-security-test')
+}
+
+group = "com.jahnelgroup.jackson"
+archivesBaseName = "jackson-field-security"
+version = "1.0"
+
+task javadocJar(type: Jar){
+	//classifer = 'javadoc'
+	from javadoc.destinationDir
+}
+
+task sourcesJar(type: Jar){
+	//classifer = 'sources'
+	from sourceSets.main.allSource
+}
+
+artifacts {
+	archives javadocJar, sourcesJar
+}
+
+signing { 
+	sign configurations.archives
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        authentication(userName: ossrhUsername, password: ossrhPassword)
+      }
+
+      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+        authentication(userName: ossrhUsername, password: ossrhPassword)
+      }
+
+      pom.project {
+        name 'Jackson Field Security'
+        packaging 'jar'
+        // optionally artifactId can be defined here 
+        description 'Provides a simple way to add field level security to your Spring Boot applications with the help of Jackson filters.'
+        url 'https://github.com/JahnelGroup/jackson-field-security'
+
+        scm {
+          connection 'scm:git:https://github.com/JahnelGroup/jackson-field-security'
+          developerConnection 'scm:git:https://github.com/JahnelGroup/jackson-field-security'
+          url 'https://github.com/JahnelGroup/jackson-field-security'
+        }
+
+        licenses {
+          license {
+            name 'The MIT License (MIT)'
+            url 'http://opensource.org/licenses/MIT'
+			distribution 'repo'
+          }
+        }
+
+        developers {
+          developer {
+            id 'szgaljic'
+            name 'Steven Zgaljic'
+            email 'szgaljic@jahnelgroup.com'
+          }
+        }
+      }
+    }
+  }
 }

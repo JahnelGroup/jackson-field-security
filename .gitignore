@@ -1,5 +1,6 @@
 .gradle
 /build/
+/bin/
 !gradle/wrapper/gradle-wrapper.jar
 
 ### STS ###
@@ -24,3 +25,6 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
+
+### VS Code ###
+.vscode
