@@ -17,14 +17,14 @@ import kotlin.reflect.KClass
 @Retention(AnnotationRetention.RUNTIME)
 annotation class SecureField(
 
-    /**
+        /**
      * The list of [FieldSecurityPolicy] policies that must be met
      * in order to permit access to a field. The default policy is
      * the [CreatedByFieldSecurityPolicy] policy.
      */
     val policies: Array<KClass<out FieldSecurityPolicy>> = arrayOf(CreatedByFieldSecurityPolicy::class),
 
-    /**
+        /**
      * The logic by which the [SecureField.policies] are evaluated
      * together. The default logic is AND.
      */
