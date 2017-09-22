@@ -27,15 +27,15 @@ compile('com.jahnelgroup.jackson:jackson-field-security:1.0.1')
 
 ## How it works
 
-This library registers a [Jackson](https://github.com/FasterXML/jackson) filter to conditionally control access to fields based on policies. Three main interface's drive this flow:
+This library registers a [Jackson](https://github.com/FasterXML/jackson) filter to conditionally control access to fields based on policies. Three main interfaces drive this flow:
 
 * **PrincipalAware** interface will identify the current logged in user (a.ka., the Principal). The default auto-configuration will use Spring Security's SecurityContextHolder. To provide your own custom implementation register a bean of type PrincipalAware. 
-* **EntityCreatedByAware** interface will identify the owner of the serialized object. The default auto-configuration will use the field annotated by Spring Data's **@CreatedBy**. To provide your own custom implementation just register a bean of type EntityCreatedByAware.
+* **EntityCreatedByAware** interface will identify the owner of the serialized object. The default auto-configuration will use the field annotated by Spring Data's **@CreatedBy**. To provide your own custom implementation register a bean of type EntityCreatedByAware.
 * **FieldSecurityPolicy** interface defines a policy for permitting a field. A field can have multiple policies combined with logic to determine a field's permissiveness. 
 
 ## Usage
 
-Annotate your class with **@JsonFilter("securityFilter")** and the fields that need to be protected with **@SecureField**. Any entity with a field annotated by @SecureField **must** have the class annotated with @JsonFilter otherwise the security filter will not be invoked.
+Annotate your class with **@JsonFilter("securityFilter")** and the fields that need to be protected with **@SecureField**. Any entity with a field annotated by @SecureField must have the class annotated with @JsonFilter otherwise the security filter will not be invoked.
 
 ```java
 @JsonFilter("securityFilter")
@@ -55,12 +55,14 @@ class User {
     String firstName;
     String lastName;
 
-    // by default this will use the CreatedByFieldSecurityPolicy
-    // which compares the logged in user against the @CreatedBy field. 
+    // By default this will use the CreatedByFieldSecurityPolicy
+    // which compares the logged in user against the @CreatedBy field
+    // resulting in having this field only to be seen by the user who 
+    // created the entity. 
     @SecureField        
     String mySecret;
     
-    // you can specify a list of custom policies, here we are 
+    // You can specify a list of custom policies, here we are 
     // protecting a field that can be seen by anyone in the same group
     @SecureField( policies = {GroupPolicy.class} )     
     String groupSecret;    
@@ -68,13 +70,14 @@ class User {
 }
 ```
 
-Here is a possible custom GroupPolicy:
+Here is a possible custom GroupPolicy implementation:
 
 ```java
-class CreatedByFieldSecurityPolicy implements FieldSecurityPolicy {
+class GroupPolicy implements FieldSecurityPolicy {
 
     private ApplicationContext appContext;
 
+    // return true to permit the field, false to deny it
     public boolean permitAccess(PropertyWriter writer, Object target, 
         String targetCreatedByUser, String currentPrincipalUser) {
         
@@ -84,6 +87,7 @@ class CreatedByFieldSecurityPolicy implements FieldSecurityPolicy {
        
     }
          
+    // here you can get a handle to your spring beans
     public void setApplicationContext(ApplicationContext appContext){
         this.appContext = appContext;   
     }
