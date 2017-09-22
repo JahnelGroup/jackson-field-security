@@ -3,9 +3,6 @@
 /bin/
 !gradle/wrapper/gradle-wrapper.jar
 
-.mvn
-mvnw
-mvnw.cmd
 target
 
 ### STS ###
