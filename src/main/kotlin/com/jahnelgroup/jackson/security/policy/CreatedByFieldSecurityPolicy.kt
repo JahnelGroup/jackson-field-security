@@ -4,7 +4,11 @@ import com.fasterxml.jackson.databind.ser.PropertyWriter
 import org.springframework.context.ApplicationContext
 
 /**
- * CreatedByFieldSecurityPolicy
+ * Policy that permits access only to the creator of the target POJO. This
+ * is the default policy.
+ *
+ * @author Steven Zgaljic
+ * @since 1.0.0
  */
 class CreatedByFieldSecurityPolicy : FieldSecurityPolicy {
 
@@ -12,13 +16,7 @@ class CreatedByFieldSecurityPolicy : FieldSecurityPolicy {
             targetCreatedByUser == currentPrincipalUser
 
     override fun setApplicationContext(applicationContext: ApplicationContext) {
-        // not required
-        applicationContext.getBean("userRepository")
-
-        var one : List<Long> = ArrayList()
-        var two : List<Long> = ArrayList()
-
-        one.stream().anyMatch(two::contains)
+        // nothing
     }
 
 }

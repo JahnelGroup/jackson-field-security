@@ -15,22 +15,22 @@ Maven:
 <dependency>
     <groupId>com.jahnelgroup.jackson</groupId>
     <artifactId>jackson-field-security</artifactId>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 
 Gradle:
 
 ```
-compile('com.jahnelgroup.jackson:jackson-field-security:1.0.1')
+compile('com.jahnelgroup.jackson:jackson-field-security:1.0.2')
 ```
 
 ## How it works
 
 This library registers a [Jackson](https://github.com/FasterXML/jackson) filter to conditionally control access to fields based on policies. Three main interfaces drive this flow:
 
-* **PrincipalAware** interface will identify the current logged in user (a.ka., the Principal). The default auto-configuration will use Spring Security's SecurityContextHolder. To provide your own custom implementation register a bean of type PrincipalAware. 
-* **EntityCreatedByAware** interface will identify the owner of the serialized object. The default auto-configuration will use the field annotated by Spring Data's **@CreatedBy**. To provide your own custom implementation register a bean of type EntityCreatedByAware.
+* **PrincipalProvider** interface will identify the current logged in user (a.ka., the Principal). The default auto-configuration will use Spring Security's SecurityContextHolder. To provide your own custom implementation register a bean of type PrincipalProvider. 
+* **EntityCreatedByProvider** interface will identify the owner of the serialized object. The default auto-configuration will use the field annotated by Spring Data's **@CreatedBy**. To provide your own custom implementation register a bean of type EntityCreatedByProvider.
 * **FieldSecurityPolicy** interface defines a policy for permitting a field. A field can have multiple policies combined with logic to determine a field's permissiveness. 
 
 ## Usage
@@ -100,3 +100,11 @@ class GroupPolicy implements FieldSecurityPolicy {
 }
 ```
  
+## Debugging
+
+You can increase the logging level to inspect how the security policies are being processed.
+
+Edit you **application.properties** with:
+```
+logging.level.com.jahnelgroup.jackson.security.filter=DEBUG
+```

@@ -5,20 +5,20 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.ser.PropertyWriter
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter
 import com.jahnelgroup.jackson.security.SecureField
-import com.jahnelgroup.jackson.security.entity.EntityCreatedByAware
+import com.jahnelgroup.jackson.security.entity.EntityCreatedByProvider
 import com.jahnelgroup.jackson.security.policy.FieldSecurityPolicy
 import com.jahnelgroup.jackson.security.policy.PolicyLogic
-import com.jahnelgroup.jackson.security.principal.PrincipalAware
+import com.jahnelgroup.jackson.security.principal.PrincipalProvider
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 
 /**
- * JacksonSecureFieldFilter
+ * The main filter that drives processing of the security annotations. 
  */
 class JacksonSecureFieldFilter (
-    private val applicationContext : ApplicationContext,
-    private val globalPrincipalAware : PrincipalAware,
-    private val globalEntityCreatedBy : EntityCreatedByAware
+        private val applicationContext : ApplicationContext,
+        private val globalPrincipalProvider: PrincipalProvider,
+        private val globalEntityCreatedByProvider: EntityCreatedByProvider
 ) : SimpleBeanPropertyFilter(){
 
     companion object {
@@ -31,9 +31,9 @@ class JacksonSecureFieldFilter (
         // the field is protected
         if(secureField != null){
 
-            //val createdByAware = secureField.entityCreatedBy ?: globalEntityCreatedBy
-            val createdByUser : String? = globalEntityCreatedBy.getCreatedBy(pojo)
-            val currentPrincipalUser : String? = globalPrincipalAware.getCurrentPrincipal()
+            //val createdByAware = secureField.entityCreatedBy ?: globalEntityCreatedByProvider
+            val createdByUser : String? = globalEntityCreatedByProvider.getCreatedBy(pojo)
+            val currentPrincipalUser : String? = globalPrincipalProvider.getCurrentPrincipal()
 
             if( executePolicies(secureField, writer, pojo, createdByUser, currentPrincipalUser) ){
                 log.debug("Permit: ${writer.name}")

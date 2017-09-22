@@ -4,9 +4,13 @@ import org.springframework.data.annotation.CreatedBy
 import org.springframework.util.ReflectionUtils
 
 /**
- * SpringDataEntityCreatedByAware
+ * Provider that will use Spring Data's [CreatedBy] annotation to
+ * identify the owner of an entity being serialized.
+ *
+ * @author Steven Zgaljic
+ * @since 1.0.0
  */
-class SpringDataEntityCreatedByAware : EntityCreatedByAware {
+class SpringDataEntityCreatedByProvider : EntityCreatedByProvider {
 
     override fun getCreatedBy(target: Any): String {
         // looping to collect all fields from base type and all super types

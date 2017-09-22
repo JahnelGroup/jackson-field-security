@@ -6,14 +6,20 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 
 /**
- * PrincipalAwareAutoConfiguration
+ * Autoconfiguration for [PrincipalProvider].
+ *
+ * @author Steven Zgaljic
+ * @since 1.0.0
  */
 @Configuration
-class PrincipalAwareAutoConfiguration {
+class PrincipalProviderAutoConfiguration {
 
+    /**
+     * The default [PrincipalProvider] is [SpringSecurityPrincipalProvider].
+     */
     @Bean
     @Primary
-    @ConditionalOnMissingBean(SpringSecurityPrincipalAware::class)
-    fun principalAware() = SpringSecurityPrincipalAware()
+    @ConditionalOnMissingBean(PrincipalProvider::class)
+    fun principalProvider() = SpringSecurityPrincipalProvider()
 
 }
