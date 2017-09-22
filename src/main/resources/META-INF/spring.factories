@@ -1,0 +1,4 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.jahnelgroup.jackson.security.entity.EntityCreatedByAwareAutoConfiguration,\
+com.jahnelgroup.jackson.security.filter.JacksonSecureFieldFilterAutoConfiguration,\
+com.jahnelgroup.jackson.security.principal.PrincipalAwareAutoConfiguration

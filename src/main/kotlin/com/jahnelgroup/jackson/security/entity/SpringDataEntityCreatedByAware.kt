@@ -1,11 +1,12 @@
-package com.jahnelgroup.jackson.security.configuration
+package com.jahnelgroup.jackson.security.entity
 
 import org.springframework.data.annotation.CreatedBy
-import org.springframework.stereotype.Component
 import org.springframework.util.ReflectionUtils
 
-@Component
-class SpringDataCreatedByAware : CreatedByAware {
+/**
+ * SpringDataEntityCreatedByAware
+ */
+class SpringDataEntityCreatedByAware : EntityCreatedByAware {
 
     override fun getCreatedBy(target: Any): String {
         // looping to collect all fields from base type and all super types

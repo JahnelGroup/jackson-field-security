@@ -5,13 +5,20 @@ import com.fasterxml.jackson.databind.SerializerProvider
 import com.fasterxml.jackson.databind.ser.PropertyWriter
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter
 import com.jahnelgroup.jackson.security.SecureField
-import com.jahnelgroup.jackson.security.configuration.CreatedByAware
+import com.jahnelgroup.jackson.security.entity.EntityCreatedByAware
+import com.jahnelgroup.jackson.security.policy.FieldSecurityPolicy
 import com.jahnelgroup.jackson.security.policy.PolicyLogic
+import com.jahnelgroup.jackson.security.principal.PrincipalAware
 import org.slf4j.LoggerFactory
-import org.springframework.security.core.context.SecurityContextHolder
+import org.springframework.context.ApplicationContext
 
+/**
+ * JacksonSecureFieldFilter
+ */
 class JacksonSecureFieldFilter (
-    private val globalCreatedBy: CreatedByAware
+    private val applicationContext : ApplicationContext,
+    private val globalPrincipalAware : PrincipalAware,
+    private val globalEntityCreatedBy : EntityCreatedByAware
 ) : SimpleBeanPropertyFilter(){
 
     companion object {
@@ -24,21 +31,21 @@ class JacksonSecureFieldFilter (
         // the field is protected
         if(secureField != null){
 
-            if( log.isDebugEnabled ){
-                log.debug("SecureField: target=${pojo.javaClass.name}, field=${writer.member.name}")
-            }
-
-            //val createdByAware = secureField.createdBy ?: globalCreatedBy
-            val createdByUser : String? = globalCreatedBy.getCreatedBy(pojo)
-            val currentPrincipalUser = SecurityContextHolder.getContext().authentication.name
+            //val createdByAware = secureField.entityCreatedBy ?: globalEntityCreatedBy
+            val createdByUser : String? = globalEntityCreatedBy.getCreatedBy(pojo)
+            val currentPrincipalUser : String? = globalPrincipalAware.getCurrentPrincipal()
 
             if( executePolicies(secureField, writer, pojo, createdByUser, currentPrincipalUser) ){
+                log.debug("Permit: ${writer.name}")
                 writer.serializeAsField(pojo, jgen, provider)
+            }else{
+                log.debug("Deny: ${writer.name}")
             }
         }
 
         // no protection, just write it out
         else{
+            log.debug("Permit (no security): ${writer.name}")
             writer.serializeAsField(pojo, jgen, provider)
         }
     }
@@ -49,21 +56,27 @@ class JacksonSecureFieldFilter (
         if (secureField.policyLogic == PolicyLogic.AND) {
             // passed all the policies
             permit = secureField.policies.takeWhile {
-                it::javaObjectType.get().newInstance().permitAccess(writer, pojo, createdByUser, currentPrincipalUser)
+                var policy : FieldSecurityPolicy = it::javaObjectType.get().newInstance()
+                policy.setApplicationContext(applicationContext)
+                policy.permitAccess(writer, pojo, createdByUser, currentPrincipalUser)
             }.size == secureField.policies.size
         }
 
         else if (secureField.policyLogic == PolicyLogic.OR) {
             // passed at least once policy
             permit = secureField.policies.takeWhile {
-                !it::javaObjectType.get().newInstance().permitAccess(writer, pojo, createdByUser, currentPrincipalUser)
+                var policy : FieldSecurityPolicy = it::javaObjectType.get().newInstance()
+                policy.setApplicationContext(applicationContext)
+                !policy.permitAccess(writer, pojo, createdByUser, currentPrincipalUser)
             }.size != secureField.policies.size
         }
 
         else if (secureField.policyLogic == PolicyLogic.XOR) {
             // passed only one policy
             secureField.policies.forEach {
-                permit = permit.xor(it::javaObjectType.get().newInstance().permitAccess(writer, pojo, createdByUser, currentPrincipalUser))
+                var policy : FieldSecurityPolicy = it::javaObjectType.get().newInstance()
+                policy.setApplicationContext(applicationContext)
+                permit = permit.xor(policy.permitAccess(writer, pojo, createdByUser, currentPrincipalUser))
             }
         }
 
