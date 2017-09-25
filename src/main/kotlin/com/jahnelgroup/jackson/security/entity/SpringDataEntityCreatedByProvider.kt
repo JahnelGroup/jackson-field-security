@@ -13,7 +13,7 @@ import java.lang.reflect.Field
  */
 class SpringDataEntityCreatedByProvider : EntityCreatedByProvider {
 
-    override fun getCreatedBy(target: Any): String {
+    override fun getCreatedBy(target: Any): String? {
         var createdByField : Field? = null
         ReflectionUtils.doWithFields(target.javaClass,
             {field -> createdByField = field},
@@ -24,9 +24,9 @@ class SpringDataEntityCreatedByProvider : EntityCreatedByProvider {
         return when( createdByField != null ){
             true -> {
                 ReflectionUtils.makeAccessible(createdByField)
-                createdByField?.get(target)?.toString() ?: ""
+                createdByField?.get(target)?.toString() ?: null
             }
-            false -> ""
+            false -> null
         }
     }
 

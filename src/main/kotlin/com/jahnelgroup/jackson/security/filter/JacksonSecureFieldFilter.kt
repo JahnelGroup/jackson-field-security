@@ -37,7 +37,7 @@ class JacksonSecureFieldFilter (
 
             //val createdByAware = secureField.entityCreatedBy ?: globalEntityCreatedByProvider
             val createdByUser : String? = globalEntityCreatedByProvider.getCreatedBy(pojo)
-            val currentPrincipalUser : String? = globalPrincipalProvider.getCurrentPrincipal()
+            val currentPrincipalUser : String? = globalPrincipalProvider.getPrincipal()
 
             if( executePolicies(secureField, writer, pojo, createdByUser, currentPrincipalUser) ){
                 log.debug("Field Permitted: ${writer.name}")

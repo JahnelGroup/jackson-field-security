@@ -12,8 +12,8 @@ interface PrincipalProvider {
     /**
      * @return the current logged in principal username
      */
-    fun getCurrentPrincipal() : String
+    fun getPrincipal() : String?
 
-    fun getRoles() : List<String>
+    fun getRoles() : List<String>?
 
 }

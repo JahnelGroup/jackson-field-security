@@ -61,7 +61,7 @@ class RoleBasedFieldSecurityPolicy : ContextAwareFieldSecurityPolicy {
     }
 
     fun getPrincipalProvider() = applicationContext!!.getBean(PrincipalProvider::class.java)
-    fun getPrincipal() = getPrincipalProvider()?.getCurrentPrincipal()
+    fun getPrincipal() = getPrincipalProvider()?.getPrincipal()
     fun getRoles() = getPrincipalProvider()?.getRoles()
 
 }

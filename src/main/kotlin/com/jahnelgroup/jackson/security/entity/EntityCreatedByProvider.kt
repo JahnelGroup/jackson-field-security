@@ -12,6 +12,6 @@ interface EntityCreatedByProvider {
     /**
      * @return the creator/owner of the target POJO
      */
-    fun getCreatedBy(target: Any) : String
+    fun getCreatedBy(target: Any) : String?
 
 }

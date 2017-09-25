@@ -11,11 +11,11 @@ import org.springframework.security.core.context.SecurityContextHolder
  */
 class SpringSecurityPrincipalProvider : PrincipalProvider {
 
-    override fun getCurrentPrincipal() =
-        SecurityContextHolder.getContext().authentication.name
+    override fun getPrincipal() =
+        SecurityContextHolder.getContext()?.authentication?.name
 
-    override fun getRoles(): List<String> =
-        SecurityContextHolder.getContext().authentication.authorities.map {
+    override fun getRoles() =
+        SecurityContextHolder.getContext()?.authentication?.authorities?.map {
             it.toString()
         }
 
