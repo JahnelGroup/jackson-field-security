@@ -9,7 +9,7 @@ import org.springframework.context.ApplicationContextAware
  * @author Steven Zgaljic
  * @since 1.0.0
  */
-interface FieldSecurityPolicy : ApplicationContextAware {
+interface FieldSecurityPolicy {
 
     /**
      * Determines if a user has access to a field. In order to accomplish this it will receive:

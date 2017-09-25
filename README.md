@@ -4,7 +4,7 @@ Provides a simple way to add field level security to your Spring Boot applicatio
 
 ## Prerequisites
 
-This library depends on Jackson, Spring Security and Spring Data.
+This library depends on Jackson, it does not require Spring Security or Spring Data but will provide auto-configurations for them if they are available.  
 
 ## Getting Started
 
@@ -31,7 +31,7 @@ This library registers a [Jackson](https://github.com/FasterXML/jackson) filter 
 
 * **PrincipalProvider** interface will identify the current logged in user (a.ka., the Principal). The default auto-configuration will use Spring Security's SecurityContextHolder. To provide your own custom implementation register a bean of type PrincipalProvider. 
 * **EntityCreatedByProvider** interface will identify the owner of the serialized object. The default auto-configuration will use the field annotated by Spring Data's **@CreatedBy**. To provide your own custom implementation register a bean of type EntityCreatedByProvider.
-* **FieldSecurityPolicy** interface defines a policy for permitting a field. A field can have multiple policies combined with logic to determine a field's permissiveness. 
+* **FieldSecurityPolicy** and **ContextAwareFieldSecurityPolicy** interfaces define policies for permitting a field. A field can have multiple policies combined with logic to determine a field's permissiveness. 
 
 ## Usage
 
@@ -62,9 +62,11 @@ class User {
     @SecureField        
     String mySecret;
     
-    // You can specify a list of custom policies, here we are 
+    // You can specify a list of custom policies. Here we are 
     // protecting a field that can be seen by anyone in the same group
-    @SecureField( policies = {GroupPolicy.class} )     
+    // or they have the ADMIN role. 
+    @SecureField( policies = {GroupPolicy.class},
+        roles = arrayOf("ADMIN"), policyLogic = EvalulationLogic.OR )     
     String groupSecret;    
     
 }
@@ -73,7 +75,7 @@ class User {
 Here is a possible custom GroupPolicy implementation:
 
 ```java
-class GroupPolicy implements FieldSecurityPolicy {
+class GroupPolicy implements ContextAwareFieldSecurityPolicy {
 
     private ApplicationContext appContext;
 
@@ -106,5 +108,5 @@ You can increase the logging level to inspect how the security policies are bein
 
 Edit you **application.properties** with:
 ```
-logging.level.com.jahnelgroup.jackson.security.filter=DEBUG
+logging.level.com.jahnelgroup.jackson.security=DEBUG
 ```

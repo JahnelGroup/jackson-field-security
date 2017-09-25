@@ -13,10 +13,6 @@ import org.springframework.context.ApplicationContext
 class CreatedByFieldSecurityPolicy : FieldSecurityPolicy {
 
     override fun permitAccess(writer: PropertyWriter, target: Any, targetCreatedByUser: String?, currentPrincipalUser: String?): Boolean =
-            targetCreatedByUser == currentPrincipalUser
-
-    override fun setApplicationContext(applicationContext: ApplicationContext) {
-        // nothing
-    }
+        targetCreatedByUser == currentPrincipalUser
 
 }

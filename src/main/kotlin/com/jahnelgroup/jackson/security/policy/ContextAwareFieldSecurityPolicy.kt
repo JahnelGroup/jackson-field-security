@@ -1,0 +1,5 @@
+package com.jahnelgroup.jackson.security.policy
+
+import org.springframework.context.ApplicationContextAware
+
+interface ContextAwareFieldSecurityPolicy : ApplicationContextAware, FieldSecurityPolicy

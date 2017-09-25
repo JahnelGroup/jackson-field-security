@@ -14,4 +14,6 @@ interface PrincipalProvider {
      */
     fun getCurrentPrincipal() : String
 
+    fun getRoles() : List<String>
+
 }
