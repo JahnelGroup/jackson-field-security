@@ -4,7 +4,7 @@ Provides a simple way to add field level security to your Spring Boot applicatio
 
 ## Prerequisites
 
-This library depends on Jackson, it does not require Spring Security or Spring Data but will provide auto-configurations for them if they are available.  
+This library depends on [Jackson](https://github.com/FasterXML/jackson). It does not require [Spring Security](https://github.com/spring-projects/spring-security) or [Spring Data](https://github.com/spring-projects/spring-data-commons) but it will provide auto-configurations for them if they are available.  
 
 ## Getting Started
 
@@ -27,11 +27,13 @@ compile('com.jahnelgroup.jackson:jackson-field-security:1.0.2')
 
 ## How it works
 
-This library registers a [Jackson](https://github.com/FasterXML/jackson) filter to conditionally control access to fields based on policies. Three main interfaces drive this flow:
+This library registers a Jackson filter to conditionally control access to fields based on policies. The filter will detect the current logged in user and the owner of the data being serialized together with the policies to determine access. 
+
+Three main interfaces drive this flow:
 
 * **PrincipalProvider** interface will identify the current logged in user (a.ka., the Principal). The default auto-configuration will use Spring Security's SecurityContextHolder. To provide your own custom implementation register a bean of type PrincipalProvider. 
 * **EntityCreatedByProvider** interface will identify the owner of the serialized object. The default auto-configuration will use the field annotated by Spring Data's **@CreatedBy**. To provide your own custom implementation register a bean of type EntityCreatedByProvider.
-* **FieldSecurityPolicy** and **ContextAwareFieldSecurityPolicy** interfaces define policies for permitting a field. A field can have multiple policies combined with logic to determine a field's permissiveness. 
+* **FieldSecurityPolicy** and **ContextAwareFieldSecurityPolicy** interfaces define policies for permitting a field.  
 
 ## Usage
 
