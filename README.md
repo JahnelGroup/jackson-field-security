@@ -132,7 +132,6 @@ You would need to use the **@EnableGlobalMethodSecurity(prePostEnabled = true)**
 @SpringBootApplication
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 class App{
-
     public static void main(String[] args) {
         SpringApplication.run(App.class, args);
     }
