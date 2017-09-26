@@ -4,6 +4,7 @@ import com.jahnelgroup.jackson.security.policy.RoleBasedFieldSecurityPolicy
 import com.jahnelgroup.jackson.security.policy.CreatedByFieldSecurityPolicy
 import com.jahnelgroup.jackson.security.policy.FieldSecurityPolicy
 import com.jahnelgroup.jackson.security.policy.EvalulationLogic
+import com.jahnelgroup.jackson.security.policy.ContextAwareFieldSecurityPolicy
 import kotlin.reflect.KClass
 
 /**
@@ -24,7 +25,19 @@ annotation class SecureField(
      * in order to permit access to a field. The default policy is
      * the [CreatedByFieldSecurityPolicy] policy.
      */
-    val policies: Array<KClass<out FieldSecurityPolicy>> = arrayOf(CreatedByFieldSecurityPolicy::class),
+    val policyClasses: Array<KClass<out FieldSecurityPolicy>> = emptyArray(),
+
+    /**
+     * Same as [SecureField.policies] but provided as a list of Spring
+     * Bean's that implement [FieldSecurityPolicy]. This is useful if
+     * you don't want to implement the [ContextAwareFieldSecurityPolicy]
+     * interface.
+     *
+     * This is also how you can adapt into Spring's Global Method Security
+     * by annotating the [FieldSecurityPolicy.permitAccess] method with a
+     * SpEL expression.
+     */
+    val policyBeans: Array<String> = emptyArray(),
 
     /**
      * The logic by which the policies are all evaluated together.

@@ -24,7 +24,7 @@ class SpringDataEntityCreatedByProvider : EntityCreatedByProvider {
         return when( createdByField != null ){
             true -> {
                 ReflectionUtils.makeAccessible(createdByField)
-                createdByField?.get(target)?.toString() ?: null
+                createdByField?.get(target)?.toString()
             }
             false -> null
         }

@@ -2,15 +2,14 @@ package com.jahnelgroup.jackson.security.filter
 
 import com.fasterxml.jackson.core.JsonGenerator
 import com.fasterxml.jackson.databind.SerializerProvider
-import com.fasterxml.jackson.databind.ser.BeanPropertyWriter
 import com.fasterxml.jackson.databind.ser.PropertyWriter
 import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter
 import com.jahnelgroup.jackson.security.SecureField
 import com.jahnelgroup.jackson.security.entity.EntityCreatedByProvider
+import com.jahnelgroup.jackson.security.exception.AccessDeniedExceptionHandler
 import com.jahnelgroup.jackson.security.policy.ContextAwareFieldSecurityPolicy
 import com.jahnelgroup.jackson.security.policy.FieldSecurityPolicy
 import com.jahnelgroup.jackson.security.policy.EvalulationLogic
-import com.jahnelgroup.jackson.security.policy.RoleBasedFieldSecurityPolicy
 import com.jahnelgroup.jackson.security.principal.PrincipalProvider
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
@@ -22,7 +21,8 @@ import kotlin.reflect.KClass
 class JacksonSecureFieldFilter (
         private val applicationContext : ApplicationContext,
         private val globalPrincipalProvider: PrincipalProvider,
-        private val globalEntityCreatedByProvider: EntityCreatedByProvider
+        private val globalEntityCreatedByProvider: EntityCreatedByProvider,
+        private val accessDeniedExceptionHandler: AccessDeniedExceptionHandler
 ) : SimpleBeanPropertyFilter(){
 
     companion object {
@@ -32,74 +32,98 @@ class JacksonSecureFieldFilter (
     override fun serializeAsField(pojo: Any, jgen: JsonGenerator, provider: SerializerProvider, writer: PropertyWriter) {
         val secureField : SecureField? = writer.findAnnotation(SecureField::class.java)
 
-        // the field is protected
+        var permit = false
+
         if(secureField != null){
-
-            //val createdByAware = secureField.entityCreatedBy ?: globalEntityCreatedByProvider
-            val createdByUser : String? = globalEntityCreatedByProvider.getCreatedBy(pojo)
-            val currentPrincipalUser : String? = globalPrincipalProvider.getPrincipal()
-
-            if( executePolicies(secureField, writer, pojo, createdByUser, currentPrincipalUser) ){
-                log.debug("Field Permitted: ${writer.name}")
-                writer.serializeAsField(pojo, jgen, provider)
-            }else{
-                log.debug("Field Denied: ${writer.name}")
-            }
+            permit = executePolicies(secureField, writer, pojo)
+        } else {
+            permit = true
         }
 
-        // no protection, just write it out
-        else{
+        if (permit){
             log.debug("Field Permitted: ${writer.name}")
             writer.serializeAsField(pojo, jgen, provider)
+        } else {
+            log.debug("Field Denied: ${writer.name}")
         }
     }
 
-    private fun executePolicies(secureField: SecureField, writer: PropertyWriter, pojo: Any, createdByUser: String?, currentPrincipalUser: String?): Boolean {
-        var permit = false
-        val policies = if (secureField.roles.isEmpty()) secureField.policies
-            else secureField.policies.plusElement(RoleBasedFieldSecurityPolicy::class)
+    private fun executePolicies(secureField: SecureField, writer: PropertyWriter, pojo: Any): Boolean {
+        var permit : Boolean? = null
 
-        log.debug("Executing ${policies.size} policies with evaluation logic ${secureField.policyLogic}")
+        var policies : List<FieldSecurityPolicy> = getPolicies(secureField)
 
-        if (secureField.policyLogic == EvalulationLogic.AND) {
-            // passed all the policies
-            permit = policies.takeWhile {
-                var passed = initPolicy(secureField, it).permitAccess(writer, pojo, createdByUser, currentPrincipalUser)
-                log.debug("Policy ${ if (passed) "Passed" else "Failed" }: ${it::javaObjectType.get().simpleName}")
-                return passed // keep going while it passes
-            }.size == secureField.policies.size // passed all polices
-        }
+        log.debug("Executing ${policies.size} policies " +
+            "for field ${writer.member.declaringClass}.[${writer.member.name}] " +
+            "annotated by @SecureField=$secureField")
 
-        else if (secureField.policyLogic == EvalulationLogic.OR) {
-            // passed at least once policy
-            for(it in policies){
-                var passed = initPolicy(secureField, it).permitAccess(writer, pojo, createdByUser, currentPrincipalUser)
-                log.debug("Policy ${ if (passed) "Passed" else "Failed" }: ${it::javaObjectType.get().simpleName}")
-                permit = permit.or(passed)
-                if( permit ) break
+        policies@ for(it in policies){
+
+            var passed : Boolean
+
+            try{
+                passed = it.permitAccess(secureField, writer, pojo,
+                    globalEntityCreatedByProvider.getCreatedBy(pojo),
+                    globalPrincipalProvider.getPrincipal())
+            } catch(e : Exception){
+                log.debug("Exception during policy: ${e.message}")
+                passed = accessDeniedExceptionHandler.permitAccess(e)
             }
-        }
 
-        else if (secureField.policyLogic == EvalulationLogic.XOR) {
-            // passed only one policy
-            policies.forEach {
-                var passed = initPolicy(secureField, it).permitAccess(writer, pojo, createdByUser, currentPrincipalUser)
-                log.debug("Policy ${ if (passed) "Passed" else "Failed" }: ${it::javaObjectType.get().simpleName}")
-                permit = permit.xor(passed) // only one should pass
+            log.debug("Policy ${if (passed) "Passed" else "Failed"}: $it")
+
+            when ( secureField.policyLogic ){
+                EvalulationLogic.AND -> {
+                    permit = permit?.and(passed) ?: passed
+                    if(!permit) break@policies
+                }
+                EvalulationLogic.OR -> {
+                    permit = permit?.or(passed) ?: passed
+                    if(permit) break@policies
+                }
+                EvalulationLogic.XOR -> {
+                    permit = permit?.xor(passed) ?: passed
+                }
             }
+
         }
 
-        return permit
+        return permit ?: false
     }
 
-    fun initPolicy(secureField: SecureField, policy : KClass<out FieldSecurityPolicy>) : FieldSecurityPolicy{
+    fun getPolicies(secureField: SecureField) : List<FieldSecurityPolicy> {
+        val policyClasses = secureField.policyClasses.toList()
+        val policyBeans = secureField.policyBeans.map {
+            applicationContext.getBean(it, FieldSecurityPolicy::class) as FieldSecurityPolicy
+        }.toMutableList()
+
+        if( secureField.roles.isNotEmpty() ){
+            policyBeans.add(getPolicyBean("roleBasedFieldSecurityPolicy"))
+        }
+
+        // default
+        if( policyBeans.isEmpty() && policyClasses.isEmpty() ){
+            policyBeans.add(getPolicyBean("createdByFieldSecurityPolicy"))
+        }
+
+        // combine together
+        var policies : MutableList<FieldSecurityPolicy> = mutableListOf()
+        policies.addAll(policyBeans)
+        policies.addAll(policyClasses.map {
+            initPolicyClass(it)
+        })
+
+        return policies
+    }
+
+    fun getPolicyBean(policyBeanName : String) : FieldSecurityPolicy =
+        applicationContext.getBean(policyBeanName, FieldSecurityPolicy::class)
+            as FieldSecurityPolicy
+
+    fun initPolicyClass(policy : KClass<out FieldSecurityPolicy>) : FieldSecurityPolicy{
         var policyInstance = policy::javaObjectType.get().newInstance()
         if ( policyInstance is ContextAwareFieldSecurityPolicy ){
             policyInstance.setApplicationContext(applicationContext)
-        }
-        if( policyInstance is RoleBasedFieldSecurityPolicy && secureField.roles.isNotEmpty() ){
-            policyInstance.roles = secureField.roles
-            policyInstance.roleLogic = secureField.roleLogic
         }
         return policyInstance
     }

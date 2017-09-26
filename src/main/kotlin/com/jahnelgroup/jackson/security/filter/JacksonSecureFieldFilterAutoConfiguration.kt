@@ -3,6 +3,7 @@ package com.jahnelgroup.jackson.security.filter
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider
 import com.jahnelgroup.jackson.security.entity.EntityCreatedByProvider
+import com.jahnelgroup.jackson.security.exception.AccessDeniedExceptionHandler
 import com.jahnelgroup.jackson.security.principal.PrincipalProvider
 import org.springframework.boot.autoconfigure.AutoConfigureBefore
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass
@@ -35,14 +36,16 @@ class JacksonSecureFieldFilterAutoConfiguration {
     fun jacksonObjectMapperBuilder(
             applicationContext: ApplicationContext,
             globalPrincipalAware: PrincipalProvider,
-            globalEntityCreatedBy: EntityCreatedByProvider) =
+            globalEntityCreatedBy: EntityCreatedByProvider,
+            accessDeniedExceptionHandler: AccessDeniedExceptionHandler) =
 
         Jackson2ObjectMapperBuilder().filters(
             SimpleFilterProvider().addFilter("securityFilter",
                     JacksonSecureFieldFilter(
                             applicationContext,
                             globalPrincipalAware,
-                            globalEntityCreatedBy))
+                            globalEntityCreatedBy,
+                            accessDeniedExceptionHandler))
         )
 
 }
