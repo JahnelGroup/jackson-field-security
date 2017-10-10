@@ -1,7 +1,7 @@
 package com.jahnelgroup.jackson.security.policy
 
 /**
- * Defines the type of logic that policies or roles can be combined
+ * Defines the type of logic that policies or policy can be combined
  * together with.
  *
  * @author Steven Zgaljic

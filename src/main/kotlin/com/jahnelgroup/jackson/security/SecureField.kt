@@ -1,10 +1,6 @@
 package com.jahnelgroup.jackson.security
 
-import com.jahnelgroup.jackson.security.policy.RoleBasedFieldSecurityPolicy
-import com.jahnelgroup.jackson.security.policy.CreatedByFieldSecurityPolicy
-import com.jahnelgroup.jackson.security.policy.FieldSecurityPolicy
-import com.jahnelgroup.jackson.security.policy.EvalulationLogic
-import com.jahnelgroup.jackson.security.policy.ContextAwareFieldSecurityPolicy
+import com.jahnelgroup.jackson.security.policy.*
 import kotlin.reflect.KClass
 
 /**
@@ -47,14 +43,14 @@ annotation class SecureField(
     val policyLogic: EvalulationLogic = EvalulationLogic.AND,
 
     /**
-     * The list of user roles that must be met in order to permit
-     * access to a field. Providing roles will automatically add the
+     * The list of user policy that must be met in order to permit
+     * access to a field. Providing policy will automatically add the
      * [RoleBasedFieldSecurityPolicy] policy to the policies list.
      */
     val roles : Array<String> = emptyArray(),
 
     /**
-     * The logic by which the roles are all evaluated together.
+     * The logic by which the policy are all evaluated together.
      *
      * The default logic is AND.
      */
