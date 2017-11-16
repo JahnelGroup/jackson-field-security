@@ -15,14 +15,14 @@ Maven:
 <dependency>
     <groupId>com.jahnelgroup.jackson</groupId>
     <artifactId>jackson-field-security</artifactId>
-    <version>1.0.4</version>
+    <version>1.0.5</version>
 </dependency>
 ```
 
 Gradle:
 
 ```
-compile('com.jahnelgroup.jackson:jackson-field-security:1.0.4')
+compile('com.jahnelgroup.jackson:jackson-field-security:1.0.5')
 ```
 
 ## How it works

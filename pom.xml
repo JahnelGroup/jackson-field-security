@@ -5,7 +5,7 @@
 
 	<groupId>com.jahnelgroup.jackson</groupId>
 	<artifactId>jackson-field-security</artifactId>
-	<version>1.0.4</version>
+	<version>1.0.5</version>
 	<packaging>jar</packaging>
 
 	<name>jackson-field-security</name>
@@ -48,7 +48,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>1.5.7.RELEASE</version>
+		<version>1.5.8.RELEASE</version>
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 
@@ -57,8 +57,8 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<java.version>1.8</java.version>
-		<kotlin.version>1.1.4-3</kotlin.version>
-		<jackson-version>2.9.1</jackson-version>
+		<kotlin.version>1.1.60</kotlin.version>
+		<jackson-version>2.9.2</jackson-version>
 	</properties>
 
 	<dependencies>
