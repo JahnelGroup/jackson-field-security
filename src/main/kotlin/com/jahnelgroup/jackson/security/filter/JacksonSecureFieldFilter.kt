@@ -8,21 +8,21 @@ import com.jahnelgroup.jackson.security.SecureField
 import com.jahnelgroup.jackson.security.entity.EntityCreatedByProvider
 import com.jahnelgroup.jackson.security.exception.AccessDeniedExceptionHandler
 import com.jahnelgroup.jackson.security.policy.ContextAwareFieldSecurityPolicy
-import com.jahnelgroup.jackson.security.policy.FieldSecurityPolicy
 import com.jahnelgroup.jackson.security.policy.EvalulationLogic
+import com.jahnelgroup.jackson.security.policy.FieldSecurityPolicy
 import com.jahnelgroup.jackson.security.principal.PrincipalProvider
 import org.slf4j.LoggerFactory
 import org.springframework.context.ApplicationContext
 import kotlin.reflect.KClass
 
 /**
- * The main filter that drives processing of the security annotations. 
+ * The main filter that drives processing of the security annotations.
  */
 class JacksonSecureFieldFilter (
-        private val applicationContext : ApplicationContext,
-        private val globalPrincipalProvider: PrincipalProvider,
-        private val globalEntityCreatedByProvider: EntityCreatedByProvider,
-        private val accessDeniedExceptionHandler: AccessDeniedExceptionHandler
+    private val applicationContext : ApplicationContext,
+    private val globalPrincipalProvider: PrincipalProvider,
+    private val globalEntityCreatedByProvider: EntityCreatedByProvider,
+    private val accessDeniedExceptionHandler: AccessDeniedExceptionHandler
 ) : SimpleBeanPropertyFilter(){
 
     companion object {
@@ -49,46 +49,29 @@ class JacksonSecureFieldFilter (
     }
 
     private fun executePolicies(secureField: SecureField, writer: PropertyWriter, pojo: Any): Boolean {
-        var permit : Boolean? = null
-
         var policies : List<FieldSecurityPolicy> = getPolicies(secureField)
 
-        log.debug("Executing ${policies.size} policies " +
-            "for field ${writer.member.declaringClass}.[${writer.member.name}] " +
-            "annotated by @SecureField=$secureField")
+        log.debug("""Executing policies
+            "for field ${writer.member.declaringClass}.[${writer.member.name}]
+            "annotated by @SecureField=$secureField""")
 
-        policies@ for(it in policies){
-
-            var passed : Boolean
-
-            try{
-                passed = it.permitAccess(secureField, writer, pojo,
-                    globalEntityCreatedByProvider.getCreatedBy(pojo),
-                    globalPrincipalProvider.getPrincipal())
-            } catch(e : Exception){
-                log.debug("Exception during policy: ${e.message}")
-                passed = accessDeniedExceptionHandler.permitAccess(e)
+        return when ( secureField.policyLogic ){
+            EvalulationLogic.AND -> {
+                policies.takeWhile {
+                    runPolicy(it, secureField, writer, pojo)
+                }.size == policies.size
             }
-
-            log.debug("Policy ${if (passed) "Passed" else "Failed"}: $it")
-
-            when ( secureField.policyLogic ){
-                EvalulationLogic.AND -> {
-                    permit = permit?.and(passed) ?: passed
-                    if(!permit) break@policies
-                }
-                EvalulationLogic.OR -> {
-                    permit = permit?.or(passed) ?: passed
-                    if(permit) break@policies
-                }
-                EvalulationLogic.XOR -> {
-                    permit = permit?.xor(passed) ?: passed
-                }
+            EvalulationLogic.OR -> {
+                policies.firstOrNull {
+                    runPolicy(it, secureField, writer, pojo)
+                } != null
             }
-
+            EvalulationLogic.XOR -> {
+                policies.filter {
+                    runPolicy(it, secureField, writer, pojo)
+                }.size == 1
+            }
         }
-
-        return permit ?: false
     }
 
     fun getPolicies(secureField: SecureField) : List<FieldSecurityPolicy> {
@@ -114,6 +97,17 @@ class JacksonSecureFieldFilter (
         })
 
         return policies
+    }
+
+    fun runPolicy(policy : FieldSecurityPolicy, secureField: SecureField, writer: PropertyWriter, pojo: Any) : Boolean {
+        return try{
+            policy.permitAccess(secureField, writer, pojo,
+                globalEntityCreatedByProvider.getCreatedBy(pojo),
+                globalPrincipalProvider.getPrincipal())
+        } catch(e : Exception){
+            log.debug("Exception during policy: ${e.message}")
+            accessDeniedExceptionHandler.permitAccess(e)
+        }
     }
 
     fun getPolicyBean(policyBeanName : String) : FieldSecurityPolicy =

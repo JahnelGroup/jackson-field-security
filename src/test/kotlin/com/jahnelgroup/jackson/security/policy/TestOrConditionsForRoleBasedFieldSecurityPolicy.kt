@@ -14,6 +14,7 @@ import org.springframework.util.ReflectionUtils
 @RunWith(SpringRunner::class)
 class TestOrConditionsForRoleBasedFieldSecurityPolicy {
 
+    val mockPropertyWriter = Mockito.mock(PropertyWriter::class.java)
     var policy = RoleBasedFieldSecurityPolicy(SpringSecurityPrincipalProvider())
 
     @SecureField
@@ -29,13 +30,15 @@ class TestOrConditionsForRoleBasedFieldSecurityPolicy {
     @Test
     @WithMockUser(username = "user", authorities = arrayOf("ROLE_ONE"))
     fun `or matching one role returns true`(){
-        Assertions.assertThat(runWith("oneRole")).isTrue()
+        Assertions.assertThat(policy.permitAccess(getAnnotation("oneRole"), mockPropertyWriter,
+            Any(), "user", "user")).isTrue()
     }
 
     @Test
     @WithMockUser(username = "user", authorities = arrayOf("ROLE_NONE"))
     fun `or not matching one role returns false`(){
-        Assertions.assertThat(runWith("oneRole")).isFalse()
+        Assertions.assertThat(policy.permitAccess(getAnnotation("oneRole"), mockPropertyWriter,
+            Any(), "user", "user")).isFalse()
     }
 
     //
@@ -45,19 +48,22 @@ class TestOrConditionsForRoleBasedFieldSecurityPolicy {
     @Test
     @WithMockUser(username = "user", authorities = arrayOf("ROLE_ONE", "ROLE_TWO"))
     fun `or matching two roles returns true`(){
-        Assertions.assertThat(runWith("twoRoles")).isTrue()
+        Assertions.assertThat(policy.permitAccess(getAnnotation("twoRoles"), mockPropertyWriter,
+            Any(), "user", "user")).isTrue()
     }
 
     @Test
     @WithMockUser(username = "user", authorities = arrayOf("ROLE_ONE", "ROLE_NONE"))
     fun `or matching one of two roles returns true`(){
-        Assertions.assertThat(runWith("twoRoles")).isTrue()
+        Assertions.assertThat(policy.permitAccess(getAnnotation("twoRoles"), mockPropertyWriter,
+            Any(), "user", "user")).isTrue()
     }
 
     @Test
     @WithMockUser(username = "user", authorities = arrayOf("ROLE_NONE"))
     fun `or matching none of two roles`(){
-        Assertions.assertThat(runWith("twoRoles")).isFalse()
+        Assertions.assertThat(policy.permitAccess(getAnnotation("twoRoles"), mockPropertyWriter,
+            Any(), "user", "user")).isFalse()
     }
 
     //
@@ -67,36 +73,32 @@ class TestOrConditionsForRoleBasedFieldSecurityPolicy {
     @Test
     @WithMockUser(username = "user", authorities = arrayOf("ROLE_ONE", "ROLE_TWO", "ROLE_THREE"))
     fun `or matching three roles returns true`(){
-        Assertions.assertThat(runWith("threeRoles")).isTrue()
+        Assertions.assertThat(policy.permitAccess(getAnnotation("threeRoles"), mockPropertyWriter,
+            Any(), "user", "user")).isTrue()
     }
 
     @Test
     @WithMockUser(username = "user", authorities = arrayOf("ROLE_ONE", "ROLE_TWO"))
     fun `or matching two of three roles returns true`(){
-        Assertions.assertThat(runWith("threeRoles")).isTrue()
+        Assertions.assertThat(policy.permitAccess(getAnnotation("threeRoles"), mockPropertyWriter,
+            Any(), "user", "user")).isTrue()
     }
 
     @Test
     @WithMockUser(username = "user", authorities = arrayOf("ROLE_ONE"))
     fun `or matching one of three roles returns true`(){
-        Assertions.assertThat(runWith("threeRoles")).isTrue()
+        Assertions.assertThat(policy.permitAccess(getAnnotation("threeRoles"), mockPropertyWriter,
+            Any(), "user", "user")).isTrue()
     }
 
     @Test
     @WithMockUser(username = "user", authorities = arrayOf("ROLE_NONE"))
     fun `or matching none of three roles returns false`(){
-        Assertions.assertThat(runWith("threeRoles")).isFalse()
+        Assertions.assertThat(policy.permitAccess(getAnnotation("threeRoles"), mockPropertyWriter,
+            Any(), "user", "user")).isFalse()
     }
-
-    //
-    // Helper methods
-    //
-
-    private fun runWith(name: String) =
-        policy.permitAccess(getAnnotation(name), Mockito.mock(PropertyWriter::class.java),
-            Any(), "user", "user")
 
     private fun getAnnotation(name: String) = ReflectionUtils.findField(
         TestOrConditionsForRoleBasedFieldSecurityPolicy::class.java, name)
-            .getAnnotation(SecureField::class.java)
+        .getAnnotation(SecureField::class.java)
 }

@@ -14,7 +14,6 @@ import org.springframework.util.ReflectionUtils
 @RunWith(SpringRunner::class)
 class TestBasicRoleBasedFieldSecurityPolicy {
 
-    val mockSecureField : SecureField = Mockito.mock(SecureField::class.java)
     val mockPropertyWriter = Mockito.mock(PropertyWriter::class.java)
 
     var policy = RoleBasedFieldSecurityPolicy(SpringSecurityPrincipalProvider())
@@ -28,19 +27,19 @@ class TestBasicRoleBasedFieldSecurityPolicy {
     //
 
     @Test
-    fun `Not logged - default returns false`(){
+    fun `Not logged with default SecureField (no roles required) should pass`(){
         assertThat(policy.permitAccess(getAnnotation("default"), mockPropertyWriter,
-            Any(), "user", "user")).isFalse()
+            Any(), "user", "user")).isTrue()
     }
 
     @Test
-    fun `Not logged - one role returns false`(){
+    fun `Not logged with SecureField requiring one role should deny`(){
         assertThat(policy.permitAccess(getAnnotation("oneRole"), mockPropertyWriter,
             Any(), "user", "user")).isFalse()
     }
 
     @Test
-    fun `Not logged - two role returns false`(){
+    fun `Not logged with SecureField requiring two roles should deny`(){
         assertThat(policy.permitAccess(getAnnotation("twoRoles"), mockPropertyWriter,
             Any(), "user", "user")).isFalse()
     }
@@ -51,21 +50,21 @@ class TestBasicRoleBasedFieldSecurityPolicy {
 
     @Test
     @WithMockUser(username = "user")
-    fun `Logged in no roles - default returns false`(){
+    fun `Logged with no roles and default SecureField (no roles required) should pass`(){
         assertThat(policy.permitAccess(getAnnotation("default"), mockPropertyWriter,
-            Any(), "user", "user")).isFalse()
+            Any(), "user", "user")).isTrue()
     }
 
     @Test
     @WithMockUser(username = "user")
-    fun `Logged in no roles - one role returns false`(){
+    fun `Logged with no roles and SecureField requiring one role should deny`(){
         assertThat(policy.permitAccess(getAnnotation("oneRole"), mockPropertyWriter,
             Any(), "user", "user")).isFalse()
     }
 
     @Test
     @WithMockUser(username = "user")
-    fun `Logged in no roles - two roles returns false`(){
+    fun `Logged with no roles and SecureField requiring two roles should deny`(){
         assertThat(policy.permitAccess(getAnnotation("twoRoles"), mockPropertyWriter,
             Any(), "user", "user")).isFalse()
     }
@@ -75,22 +74,47 @@ class TestBasicRoleBasedFieldSecurityPolicy {
     //
 
     @Test
-    @WithMockUser(username = "user", authorities = arrayOf("NOT_MATCHING"))
-    fun `Logged in one role - default returns false`(){
+    @WithMockUser(username = "user", authorities = arrayOf("ROLE_NOT_MATCHING"))
+    fun `Logged with one role and default SecureField (no roles required) should pass`(){
         assertThat(policy.permitAccess(getAnnotation("default"), mockPropertyWriter,
-            Any(), "user", "user")).isFalse()
+            Any(), "user", "user")).isTrue()
     }
 
     @Test
-    @WithMockUser(username = "user", authorities = arrayOf("NOT_MATCHING"))
-    fun `Logged in one role - one role not matching returns false`(){
+    @WithMockUser(username = "user", authorities = arrayOf("ROLE_NOT_MATCHING"))
+    fun `Logged with one role and SecureField requiring one non-matching role should deny`(){
         assertThat(policy.permitAccess(getAnnotation("oneRole"), mockPropertyWriter,
             Any(), "user", "user")).isFalse()
     }
 
     @Test
-    @WithMockUser(username = "user", authorities = arrayOf("NOT_MATCHING"))
-    fun `Logged in one role - two roles not matching returns false`(){
+    @WithMockUser(username = "user", authorities = arrayOf("ROLE_NOT_MATCHING"))
+    fun `Logged with one role and SecureField requiring two non-matching roles should deny`(){
+        assertThat(policy.permitAccess(getAnnotation("twoRoles"), mockPropertyWriter,
+            Any(), "user", "user")).isFalse()
+    }
+
+    //
+    // Logged in with two roles, both non-matching
+    //
+
+    @Test
+    @WithMockUser(username = "user", authorities = arrayOf("ROLE_NOT_MATCHING_1", "ROLE_NOT_MATCHING_2"))
+    fun `Logged with two roles and default SecureField (no roles required) should pass`(){
+        assertThat(policy.permitAccess(getAnnotation("default"), mockPropertyWriter,
+            Any(), "user", "user")).isTrue()
+    }
+
+    @Test
+    @WithMockUser(username = "user", authorities = arrayOf("ROLE_NOT_MATCHING_1", "ROLE_NOT_MATCHING_2"))
+    fun `Logged with two roles and SecureField requiring one non-matching role should deny`(){
+        assertThat(policy.permitAccess(getAnnotation("oneRole"), mockPropertyWriter,
+            Any(), "user", "user")).isFalse()
+    }
+
+    @Test
+    @WithMockUser(username = "user", authorities = arrayOf("ROLE_NOT_MATCHING_1", "ROLE_NOT_MATCHING_2"))
+    fun `Logged with two roles and SecureField requiring two non-matching roles should deny`(){
         assertThat(policy.permitAccess(getAnnotation("twoRoles"), mockPropertyWriter,
             Any(), "user", "user")).isFalse()
     }

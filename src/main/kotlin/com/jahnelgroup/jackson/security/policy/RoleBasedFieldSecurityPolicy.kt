@@ -15,37 +15,36 @@ class RoleBasedFieldSecurityPolicy(
 
     override fun permitAccess(secureField: SecureField, writer: PropertyWriter, target: Any,
                               targetCreatedByUser: String?, currentPrincipalUser: String?): Boolean {
-        var permit : Boolean? = null
 
         val formattedRoles : List<String> = secureField.roles.map {
             if (it.startsWith("ROLE_")) it else "ROLE_" + it
         }
 
-        val passedRoles = mutableListOf<String>()
+        return when( secureField.roleLogic ) {
+            EvalulationLogic.AND -> {
+                formattedRoles.takeWhile {
+                    permitRole(it)
+                }.size == formattedRoles.size
+            }
 
-        roles@ for(it in formattedRoles){
-            var passed = principalProvider.getRoles()?.contains(it) ?: false
-            if(passed) passedRoles.add(it)
-            log.debug("Role ${if (passed) "Passed" else "Failed"}: $it")
+            EvalulationLogic.OR -> {
+                formattedRoles.firstOrNull{
+                    permitRole(it)
+                }.orEmpty().isNotEmpty()
+            }
 
-            when( secureField.roleLogic ) {
-                EvalulationLogic.AND -> {
-                    permit = permit?.and(passed) ?: passed
-                    if(!permit) break@roles
-                }
-
-                EvalulationLogic.OR -> {
-                    permit = permit?.or(passed) ?: passed
-                    if(permit) break@roles
-                }
+            EvalulationLogic.XOR -> {
+                formattedRoles.filter {
+                    permitRole(it)
+                }.size == 1
             }
         }
+    }
 
-        if( secureField.roleLogic == EvalulationLogic.XOR ){
-            permit = passedRoles.size == 1
-        }
-
-        return permit ?: false
+    fun permitRole(role: String) : Boolean {
+        var permit = principalProvider.getRoles()?.contains(role) ?: false
+        log.debug("Role ${if (permit) "Passed" else "Failed"}: $role")
+        return permit
     }
 
 }

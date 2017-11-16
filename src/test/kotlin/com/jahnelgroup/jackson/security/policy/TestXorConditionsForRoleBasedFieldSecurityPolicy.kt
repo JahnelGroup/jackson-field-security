@@ -98,9 +98,6 @@ class TestXorConditionsForRoleBasedFieldSecurityPolicy {
             Any(), "user", "user")).isFalse()
     }
 
-
-
-
     private fun getAnnotation(name: String) = ReflectionUtils.findField(
         TestXorConditionsForRoleBasedFieldSecurityPolicy::class.java, name)
             .getAnnotation(SecureField::class.java)
